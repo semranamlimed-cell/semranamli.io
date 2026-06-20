@@ -7,6 +7,7 @@
 <body>
     <h1>Oyun Platformuma Hoş Geldiniz!</h1>
     <p>Oynamak istediğiniz oyuna tıklayın:</p>
+    [Noktalama İşaretleri Oyunu Oyna](noktalamambli.html)
     <ul>
 </body>
 </html>
