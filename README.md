@@ -2,5 +2,4 @@
 
 Oynamak istediğiniz oyuna tıklayın:
 
-* [Noktalama İşaretleri Oyunu Oyna](noktalamambli.html)
-
+* [Noktalama İşaretleri Oyunu Oyna](index.html)
