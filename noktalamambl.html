@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Noktalama Ustası</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           GENEL STİLLER VE RESET
+           ═══════════════════════════════════════════════════════════════ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(160deg, #0A0815 0%, #16113A 50%, #0A0815 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            overscroll-behavior: none; /* Mobilde sekmeyi aşağı çekip yenilemeyi engeller */
+        }
+        
+        /* Mobil Tıklama Hissiyatı İyileştirmeleri */
+        button { 
+            font-family: inherit; 
+            -webkit-tap-highlight-color: transparent; 
+            touch-action: manipulation; 
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .screen { display: none; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; }
+        .screen.active { display: flex; }
+
+        .tag {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px; padding: 5px 14px; font-size: 12px; color: rgba(255,255,255,0.5);
+            letter-spacing: 0.5px; font-weight: 600; white-space: nowrap;
+        }
+
+        .grade-btn {
+            background: rgba(255,255,255,0.03); border: 2px solid; border-radius: 20px;
+            padding: 22px 8px; cursor: pointer; display: flex; flex-direction: column;
+            align-items: center; gap: 12px; color: #fff; transition: all 0.25s;
+            backdrop-filter: blur(8px); outline: none;
+        }
+        @media (hover: hover) {
+            .grade-btn:hover { transform: translateY(-4px); }
+            .ghost-btn:hover { background: rgba(255,255,255,0.1); }
+        }
+
+        .ghost-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 14px; padding: 16px 30px; color: #fff; font-size: 15px;
+            font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+
+        .top-bar {
+            width: 100%; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(12px); position: fixed; top: 0; left: 0; z-index: 10;
+        }
+
+        .card {
+            width: 100%; max-width: 640px; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 28px;
+            backdrop-filter: blur(16px); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .punct-btn {
+            border-radius: 12px; padding: 10px 14px; display: flex; flex-direction: column;
+            align-items: center; gap: 3px; transition: all 0.2s; min-width: 56px; flex: 1 1 auto; max-width: 85px; outline: none; backdrop-filter: blur(4px);
+        }
+
+        @keyframes spin { from { transform: rotate(0) } to { transform: rotate(360deg) } }
+        .spinner {
+            width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.08);
+            border-radius: 50%; margin: 0 auto; animation: spin 0.8s linear infinite;
+        }
+
+        .blank-span { transition: all 0.25s; position: relative; }
+
+        /* Mobil Uyumluluk İçin Izgara (Grid) Sınıfları */
+        .grades-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+        }
+        .analysis-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           MOBİL/TABLET MEDYA SORGULARI
+           ═══════════════════════════════════════════════════════════════ */
+        @media (max-width: 600px) {
+            .grades-grid { grid-template-columns: repeat(2, 1fr); }
+            .analysis-grid { grid-template-columns: 1fr; }
+            .card { padding: 20px 16px; }
+            .top-bar { padding: 12px 15px; }
+            .screen { padding: 24px 15px; }
+            .punct-btn { padding: 12px 8px; min-width: calc(33% - 10px); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         EKRANLAR
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="app">
+        <!-- ANA MENÜ -->
+        <div id="home-screen" class="screen active">
+            <div style="text-align: center; margin-bottom: 48px; width: 100%;">
+                <div style="font-size: 64px; margin-bottom: 18px; filter: drop-shadow(0 0 20px rgba(84,160,255,0.4))">🖋️</div>
+                <h1 style="font-size: clamp(26px,7vw,42px); font-weight: 900; color: #fff; margin: 0 0 10px; letter-spacing: -0.5px;">Noktalama Ustası</h1>
+                <div style="font-size: 13px; color: rgba(255,255,255,0.5); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 22px;">TDK & Pedagoji Uyumlu</div>
+                <div style="display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 0 10px;">
+                    <span class="tag">Hatasız Sistem</span>
+                    <span class="tag">5 Tur</span>
+                    <span class="tag">3 Can</span>
+                    <span class="tag">Eğitim Koçu</span>
+                    <span class="tag">Sesli Bildirim</span>
+                </div>
+            </div>
+            <div style="width: 100%; max-width: 600px;">
+                <div style="text-align: center; font-size: 11px; letter-spacing: 3px; color: rgba(255,255,255,0.3); text-transform: uppercase; margin-bottom: 16px;">Sınıfını Seç ve Oyuna Başla</div>
+                <div id="grades-container" class="grades-grid">
+                    <!-- Sınıf butonları buraya JS ile yüklenecek -->
+                </div>
+            </div>
+        </div>
+
+        <!-- OYUN EKRANI -->
+        <div id="game-screen" class="screen" style="justify-content: flex-start; padding-top: 80px;">
+            <div class="top-bar">
+                <button onclick="goToHome()" style="background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 13px; padding: 0; font-weight: 600; outline: none;">← Çıkış</button>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <span id="game-grade-title" style="font-size: 12px; font-weight: 700; letter-spacing: 0.5px;"></span>
+                    <div id="round-bar" style="display: flex; gap: 5px; align-items: center;"></div>
+                    <span id="game-round-text" style="font-size: 10px; color: rgba(255,255,255,0.3);"></span>
+                </div>
+                <div id="hearts-container" style="display: flex; gap: 5px;"></div>
+            </div>
+
+            <div style="width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 24px;">
+                <!-- İlerleme Çubuğu -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span id="progress-text-1" style="font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 0.5px;"></span>
+                        <span id="progress-text-2" style="font-size: 11px; color: rgba(255,255,255,0.35);"></span>
+                    </div>
+                    <div style="height: 4px; border-radius: 2px; background: rgba(255,255,255,0.09); overflow: hidden;">
+                        <div id="progress-bar-fill" style="height: 100%; border-radius: 2px; background: linear-gradient(90deg,#54A0FF,#5F27CD); transition: width 0.35s ease;"></div>
+                    </div>
+                </div>
+
+                <!-- Soru Kartı -->
+                <div class="card">
+                    <div id="multi-blank-indicator" style="display: none; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 16px;">
+                        <span style="font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px;">Birden Fazla Boşluk</span>
+                        <div id="multi-blank-dots" style="display: flex; gap: 6px;"></div>
+                    </div>
+                    <div id="sentence-container" style="font-size: clamp(15px,4vw,21px); line-height: 2.1; color: #ECECEC; font-weight: 400; letter-spacing: 0.2px;">
+                        <!-- Cümle içeriği -->
+                    </div>
+                </div>
+
+                <!-- Geri Bildirim Afişi -->
+                <div id="feedback-banner" style="display: none; width: 100%; max-width: 640px; padding: 16px 20px; border-radius: 16px; transition: all 0.3s;">
+                    <div id="feedback-title" style="font-weight: 800; font-size: 15px; margin-bottom: 6px;"></div>
+                    <div style="font-size: 13px; opacity: 0.9; line-height: 1.5; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                        <span style="font-size: 11px; opacity: 0.7; display: block; margin-bottom: 2px;">TDK KURALI:</span>
+                        <span id="feedback-rule"></span>
+                    </div>
+                </div>
+
+                <!-- İşaret Butonları -->
+                <div style="width: 100%; max-width: 640px;">
+                    <div id="buttons-title" style="font-size: 11px; color: rgba(255,255,255,0.3); text-align: center; margin-bottom: 14px; letter-spacing: 2px; text-transform: uppercase;"></div>
+                    <div id="punct-buttons-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+                        <!-- Butonlar -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANALİZ EKRANI -->
+        <div id="analysis-screen" class="screen" style="padding: 24px 18px 48px; justify-content: flex-start; overflow-y: auto;">
+            <div style="width: 100%; max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px;">
+                <div style="text-align: center; padding: 12px 0 4px;">
+                    <div id="analysis-title" style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; font-weight: 800; margin-bottom: 6px;"></div>
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.4);">Eğitim Koçu Değerlendirmesi</div>
+                </div>
+
+                <div id="analysis-loading" style="text-align: center; padding: 64px 0;">
+                    <div class="spinner" id="analysis-spinner"></div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 15px; margin-top: 20px;">Analiz ve Tavsiyeler Hazırlanıyor...</div>
+                </div>
+
+                <div id="analysis-content" style="display: none; flex-direction: column; gap: 14px;">
+                    <div class="card" id="analysis-score-card" style="text-align: center; background: rgba(255,255,255,0.03);">
+                        <div id="analysis-score" style="font-size: 72px; font-weight: 900; line-height: 1; letter-spacing: -2px;"></div>
+                        <div id="analysis-mastery" style="display: inline-block; border-radius: 20px; padding: 6px 20px; font-size: 13px; font-weight: 800; margin-top: 12px;"></div>
+                        <div id="analysis-headline" style="font-size: 18px; color: #FFF; font-weight: 700; margin-top: 16px; line-height: 1.4;"></div>
+                    </div>
+
+                    <div class="card">
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 2.5px; text-transform: uppercase; font-weight: 800; margin-bottom: 12px;">🎓 EDEBİYAT ÖĞRETMENİNİN NOTU</div>
+                        <div id="analysis-coach-note" style="font-size: 14px; color: rgba(255,255,255,0.85); line-height: 1.7;"></div>
+                    </div>
+
+                    <div class="analysis-grid">
+                        <div class="card" style="border-color: rgba(76,175,80,0.2); background: rgba(76,175,80,0.06); padding: 20px;">
+                            <div style="font-size: 11px; color: #4CAF50; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 800; margin-bottom: 12px;">✓ GÜÇLÜ YÖNLER</div>
+                            <div id="analysis-strengths"></div>
+                        </div>
+                        <div class="card" style="border-color: rgba(255,152,0,0.2); background: rgba(255,152,0,0.06); padding: 20px;">
+                            <div style="font-size: 11px; color: #FF9800; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 800; margin-bottom: 12px;">↑ GELİŞTİRİLMELİ</div>
+                            <div id="analysis-gaps"></div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="border-color: rgba(84,160,255,0.2); background: rgba(84,160,255,0.06);">
+                        <div style="font-size: 11px; color: #54A0FF; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 800; margin-bottom: 12px;">📚 DİKKAT ÇEKEN TDK KURALI</div>
+                        <div id="analysis-tdk-rule" style="font-size: 14px; color: rgba(255,255,255,0.85); line-height: 1.6;"></div>
+                    </div>
+
+                    <div class="card" style="border-color: rgba(255,215,0,0.15); background: rgba(255,215,0,0.05);">
+                        <div id="analysis-tip" style="font-size: 14px; color: rgba(255,215,0,0.9); line-height: 1.6; margin-bottom: 12px; font-weight: 600;"></div>
+                        <div id="analysis-motivation" style="font-size: 14px; color: rgba(255,255,255,0.8); font-style: italic; line-height: 1.6; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);"></div>
+                    </div>
+
+                    <!-- Okuma Zamanlayıcısı -->
+                    <div>
+                        <div style="height: 3px; border-radius: 2px; background: rgba(255,255,255,0.08); overflow: hidden; margin-bottom: 12px;">
+                            <div id="read-timer-fill" style="height: 100%; width: 0%; transition: width 0.2s linear;"></div>
+                        </div>
+                    </div>
+
+                    <button id="next-round-btn" disabled style="border-radius: 16px; padding: 18px; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; transition: all 0.4s; margin-top: 8px; width: 100%;"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RETRY EKRANI -->
+        <div id="retry-screen" class="screen" style="gap: 20px; text-align: center;">
+            <div style="font-size: 64px;">💔</div>
+            <div style="width: 100%;">
+                <div style="font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 8px;">Canların Tükendi!</div>
+                <div id="retry-desc" style="font-size: 15px; color: rgba(255,255,255,0.5); max-width: 300px; line-height: 1.6; margin: 0 auto;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; margin-top: 10px;">
+                <button id="btn-retry" style="border: none; border-radius: 14px; padding: 16px; color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; width: 100%;">🔄 Turu Tekrar Dene</button>
+                <button onclick="goToHome()" class="ghost-btn" style="width: 100%;">🏠 Ana Menü</button>
+            </div>
+        </div>
+
+        <!-- COMPLETE EKRANI -->
+        <div id="complete-screen" class="screen" style="gap: 24px; text-align: center;">
+            <div id="complete-medal" style="font-size: 84px;"></div>
+            <div>
+                <h2 style="font-size: 32px; font-weight: 900; margin: 0 0 10px; letter-spacing: -0.5px;">Tebrikler!</h2>
+                <div id="complete-desc" style="color: rgba(255,255,255,0.45); font-size: 15px;"></div>
+            </div>
+            <div class="card" id="complete-card" style="padding: 32px 20px; text-align: center; background: rgba(255,255,255,0.03);">
+                <div id="complete-score" style="font-size: 64px; font-weight: 900; letter-spacing: -2px;"></div>
+                <div style="font-size: 14px; color: rgba(255,255,255,0.5); margin-top: 8px; text-transform: uppercase; letter-spacing: 1px;">Genel Başarı Oranı</div>
+                <div id="complete-stats" style="font-size: 14px; color: rgba(255,255,255,0.3); margin-top: 8px;"></div>
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 10px; width: 100%; max-width: 300px;">
+                <button id="btn-play-again" style="border: none; border-radius: 14px; padding: 16px; color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; width: 100%;">🔄 Tekrar Oyna</button>
+                <button onclick="goToHome()" class="ghost-btn" style="width: 100%;">🏠 Ana Menü</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         JAVASCRIPT
+         ═══════════════════════════════════════════════════════════════ -->
+    <script>
+        // --- SES MOTORU (Web Audio API) ---
+        // Mobil tarayıcılarda seslerin çalışması için kullanıcı etkileşimi şarttır.
+        // Bu yüzden sound.init() butonlara tıklandığında tetiklenmektedir.
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+            playTone(freq, type, duration, vol = 0.1, startTime = 0) {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime + startTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime + startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + startTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(this.ctx.currentTime + startTime);
+                    osc.stop(this.ctx.currentTime + startTime + duration);
+                } catch (e) {
+                    console.warn("Ses çalınamadı:", e);
+                }
+            }
+            correct() { this.init(); this.playTone(600, 'sine', 0.1, 0.1, 0); this.playTone(800, 'sine', 0.2, 0.1, 0.1); }
+            wrong() { this.init(); this.playTone(300, 'sawtooth', 0.15, 0.1, 0); this.playTone(250, 'sawtooth', 0.2, 0.1, 0.15); }
+            complete() { this.init(); [400, 500, 600, 800].forEach((f, i) => this.playTone(f, 'sine', 0.2, 0.1, i * 0.1)); }
+            win() { this.init(); [400, 500, 600, 800, 600, 1000].forEach((f, i) => this.playTone(f, 'square', 0.2, 0.05, i * 0.15)); }
+        }
+        const sound = new SoundEngine();
+
+        // --- VERİ TABANI (Her Sınıf İçin 25 Özgün Soru - 5 Tur Boyunca Tekrar Yok) ---
+        const QUESTION_BANK = {
+            1: [
+                { text: "Bugün okula gittim___", blanks: ["."], rule: "Tamamlanmış cümlelerin sonuna nokta konur." },
+                { text: "Adın ne___", blanks: ["?"], rule: "Soru bildiren cümlelerin sonuna soru işareti konur." },
+                { text: "Kedimizin adı Pamuk'tur___", blanks: ["."], rule: "Bilgi veren düz cümlelerin sonuna nokta konur." },
+                { text: "Nerede oturuyorsun___", blanks: ["?"], rule: "Soru anlamı taşıyan cümlelerin sonuna soru işareti konur." },
+                { text: "Yaşasın___ Bugün bayram___", blanks: ["!", "."], rule: "Ünlem bildiren sözcükten sonra büyük harfle başlanmışsa ilk boşluğa ünlem, sona nokta konur." },
+                { text: "Aferin sana___", blanks: ["!"], rule: "Beğeni, takdir ve duygu bildiren cümlelerin sonuna ünlem konur." },
+                { text: "Hava çok güzel___", blanks: ["."], rule: "Düz ve kurallı cümlelerin sonuna nokta konur." },
+                { text: "Dikkat et___ Düşeceksin___", blanks: ["!", "."], rule: "Uyarı sözcüğünden sonra büyük harfle başlandığı için ilk boşluğa ünlem konur." },
+                { text: "Top bahçede duruyor___", blanks: ["."], rule: "Tamamlanmış yargı bildiren cümlelerin sonuna nokta konur." },
+                { text: "Bu senin kalemin mi___", blanks: ["?"], rule: "Soru eki 'mi' ile kurulan soru cümlelerinin sonuna soru işareti konur." },
+                { text: "Sabah erkenden kalktım___", blanks: ["."], rule: "Anlamı tamamlanmış cümlelerin sonuna nokta konur." },
+                { text: "Elma yemeyi sever misin___", blanks: ["?"], rule: "Soru anlamı taşıyan cümlelerin sonuna soru işareti konur." },
+                { text: "Eyvah___ Süt döküldü___", blanks: ["!", "."], rule: "Korku ve telaş bildiren ünlem sözcüğünden sonra büyük harfle başlanıyorsa ünlem konur." },
+                { text: "Babam bana bisiklet aldı___", blanks: ["."], rule: "Düz cümlelerin sonuna nokta konur." },
+                { text: "Kırmızı benim en sevdiğim renktir___", blanks: ["."], rule: "Bilgi veren tamamlanmış cümlelerin sonuna nokta konur." },
+                { text: "Oyun oynamaya gidelim mi___", blanks: ["?"], rule: "Soru ekiyle biten cümlelerin sonuna soru işareti konur." },
+                { text: "İmdat___ Düşüyorum___", blanks: ["!", "."], rule: "Yardım çağrısı bildiren ifadelerde ünlem kullanılır." },
+                { text: "Kuşlar ağaçta ötüyor___", blanks: ["."], rule: "Tamamlanmış yargı bildiren cümlelerin sonuna nokta konur." },
+                { text: "Kaç yaşındasın___", blanks: ["?"], rule: "Soru sözcüğü içeren cümlelerin sonuna soru işareti konur." },
+                { text: "Harika___ Çok güzel çizmişsin___", blanks: ["!", "."], rule: "Beğeni bildiren sözcükten sonra büyük harfle başlandığı için ünlem konur." },
+                { text: "Ödevlerimi bitirdim___", blanks: ["."], rule: "Düz cümlelerin sonuna nokta konur." },
+                { text: "Yarın hava güneşli olacakmış___", blanks: ["."], rule: "Haber bildiren cümlelerin sonuna nokta konur." },
+                { text: "Neden ağlıyorsun___", blanks: ["?"], rule: "Soru anlamı taşıyan cümlelerin sonuna soru işareti konur." },
+                { text: "Vah vah___ Çok yazık oldu___", blanks: ["!", "."], rule: "Acıma bildiren ifadelerin sonuna ünlem işareti konur." },
+                { text: "Süt içmek kemikleri güçlendirir___", blanks: ["."], rule: "Bilgi veren cümlelerin sonuna nokta konur." }
+            ],
+            2: [
+                { text: "Pazardan elma___ armut ve muz aldım___", blanks: [",", "."], rule: "Eş görevli sözcükleri (elma, armut) ayırmak için virgül kullanılır." },
+                { text: "Evet___ seninle geleceğim___", blanks: [",", "."], rule: "Cümle başındaki onay/ret sözcüklerinden (evet, hayır) sonra virgül konur." },
+                { text: "Ali___ Ayşe ve Cem sinemaya gitti___", blanks: [",", "."], rule: "Art arda sıralanan isimlerin arasına virgül konur." },
+                { text: "Hayır___ bunu kabul edemem___", blanks: [",", "."], rule: "Ret bildiren kelimelerden sonra virgül kullanılır." },
+                { text: "Sabah kalktım___ yüzümü yıkadım___", blanks: [",", "."], rule: "Sıralı cümleleri birbirinden ayırmak için virgül konur." },
+                { text: "Bahar geldi___ ağaçlar çiçek açtı___", blanks: [",", "."], rule: "Birbiriyle ilişkili ve art arda gelen sıralı cümleler virgülle ayrılır." },
+                { text: "Ah___ elim yandı___", blanks: ["!", "."], rule: "Ünlem sözcüğünden sonra büyük harfle başlanmışsa ünlem işareti hemen konur." },
+                { text: "Eyvah___ cüzdanım yok___", blanks: [",", "!"], rule: "Ünlem kelimesinden sonra küçük harfle başlandığı için virgül, cümlenin sonuna ise ünlem işareti konur." },
+                { text: "Bu kitabı okudun mu___", blanks: ["?"], rule: "Soru cümlelerinin sonuna soru işareti konur." },
+                { text: "Kırmızı___ mavi ve sarı en sevdiğim renklerdir___", blanks: [",", "."], rule: "Eş görevli sözcüklerin arasına virgül konur." },
+                { text: "Çantamda silgi___ kalem ve defter var___", blanks: [",", "."], rule: "Eş görevli sözcükleri ayırmak için virgül kullanılır." },
+                { text: "Peki___ dediğini yapacağım___", blanks: [",", "."], rule: "Kabul bildiren onay sözcüklerinden sonra virgül konur." },
+                { text: "Kedi___ köpek ve kuş gördüm___", blanks: [",", "."], rule: "Sıralanan kelimelerin arasına virgül konur." },
+                { text: "Elbette___ sana yardım ederim___", blanks: [",", "."], rule: "Onay bildiren kelimelerden sonra virgül kullanılır." },
+                { text: "Manavdan soğan___ patates ve domates aldık___", blanks: [",", "."], rule: "Art arda eş görevli kelimeler sıralanıyorsa virgül konur." },
+                { text: "Hayır___ oraya gitmek istemiyorum___", blanks: [",", "."], rule: "Reddetme bildiren sözcüklerden sonra virgül konur." },
+                { text: "Ali___ topu bana atar mısın___", blanks: [",", "?"], rule: "Hitap sözcüklerinden sonra virgül, soru cümlesinin sonuna soru işareti konur." },
+                { text: "Vay canına___ bu harika___", blanks: ["!", "."], rule: "Şaşkınlık bildiren sözcükten sonra büyük harfle başlandığı için ünlem konur." },
+                { text: "Eve geldim___ yemeğimi yedim___", blanks: [",", "."], rule: "Art arda yapılan işleri anlatan sıralı cümleler virgülle ayrılır." },
+                { text: "Çorba___ makarna ve salata yedik___", blanks: [",", "."], rule: "Eş görevli kelimeleri ayırmak için virgül kullanılır." },
+                { text: "Siyah___ beyaz ve gri kıyafetleri severim___", blanks: [",", "."], rule: "Sıralanan niteliklerin arasına virgül konur." },
+                { text: "Tamam___ yarın buluşuruz___", blanks: [",", "."], rule: "Onay bildiren sözcükten sonra virgül konur." },
+                { text: "Ayşe___ Zeynep ve Mert bize gelecek___", blanks: [",", "."], rule: "İsimleri sıralarken aralarına virgül konur." },
+                { text: "Oley___ sınavdan yüksek not aldım___", blanks: ["!", "."], rule: "Sevinç bildiren sözcükten sonra büyük harfle başlanıyorsa ünlem konur." },
+                { text: "Düştüm___ dizim çok acıyor___", blanks: [",", "."], rule: "Sıralı cümleleri ayırmak için virgül kullanılır." }
+            ],
+            3: [
+                { text: "Meyveler ikiye ayrılır___ sert ve yumuşak olanlar___", blanks: [":", "."], rule: "Açıklama yapılacak veya örnek verilecek cümlenin sonuna iki nokta konur." },
+                { text: "Atatürk şöyle der___ 'Hayatta en hakiki mürşit ilimdir___'", blanks: [":", "."], rule: "Alıntı cümlelerden önce iki nokta konur." },
+                { text: "En sevdiğim dersler şunlardır___ Türkçe___ Matematik ve Fen___", blanks: [":", ",", "."], rule: "Açıklama öncesi iki nokta, sıralanan ögeler arasına virgül konur." },
+                { text: "Yağmur yağdı___ hava soğudu___", blanks: [",", "."], rule: "Sıralı cümleleri ayırmak için virgül kullanılır." },
+                { text: "Peki___ yarın sabah görüşürüz___", blanks: [",", "."], rule: "Kabul veya teşvik bildiren sözcüklerden sonra virgül konur." },
+                { text: "Dur___ Ne yapıyorsun___", blanks: ["!", "?"], rule: "Ünlem bildiren kelimeden sonra ünlem, soru bildiren cümlenin sonuna soru işareti konur." },
+                { text: "Kitaplar___ defterler ve kalemler masadaydı___", blanks: [",", "."], rule: "Eş görevli sözcükleri sıralarken araya virgül konur." },
+                { text: "Bu deneyin amacı şudur___ Suyun kaldırma kuvvetini gözlemlemek___", blanks: [":", "."], rule: "Açıklama yapılacak cümlenin sonuna iki nokta konur." },
+                { text: "İmdat___ Ev yanıyor___", blanks: ["!", "."], rule: "Ünlem kelimesi tek başına kullanılıp sonrasında büyük harfle başlanıyorsa hemen ünlem konur." },
+                { text: "Akşamları kitap okur___ müzik dinler___", blanks: [",", "."], rule: "Sıralı eylemleri (yüklemleri) ayırmak için virgül kullanılır." },
+                { text: "Size bir sır vereceğim___ Başarının anahtarı çalışmaktır___", blanks: [":", "."], rule: "Kendisinden sonra açıklama yapılacak cümlenin sonuna iki nokta konur." },
+                { text: "Marketten şunları al___ süt___ peynir ve yumurta___", blanks: [":", ",", "."], rule: "Örnekler sıralanmadan önce iki nokta, eş görevli sözcükler arasına virgül konur." },
+                { text: "İlkbahar ayları şunlardır___ Mart___ Nisan ve Mayıs___", blanks: [":", ",", "."], rule: "Açıklama veya liste öncesi iki nokta kullanılır." },
+                { text: "Öğretmenimiz uyardı___ Yarın sınav var___", blanks: [":", "."], rule: "Başkasına ait bir söz aktarılmadan önce iki nokta konur." },
+                { text: "Bu işin tek çözümü var___ sabretmek___", blanks: [":", "."], rule: "Açıklayıcı ifadelerden önce iki nokta konur." },
+                { text: "Çantamda ne yok ki___ kitaplar___ defterler ve kalemler___", blanks: [":", ",", "."], rule: "Örnek verilecek cümlenin sonuna iki nokta konur." },
+                { text: "En sevdiğim oyunlar şunlardır___ saklambaç___ körebe ve seksek___", blanks: [":", ",", "."], rule: "Örnekleme yapılmadan önce iki nokta konur." },
+                { text: "Dün çok yağmur yağdı___ her yer göl oldu___", blanks: [",", "."], rule: "Anlamca birbirine bağlı sıralı cümleler virgülle ayrılır." },
+                { text: "Yaşasın___ Sonunda tatil başlıyor___", blanks: ["!", "."], rule: "Ünlemden sonra büyük harf varsa hemen ünlem işareti konur." },
+                { text: "İki tür insan vardır___ iyiler ve kötüler___", blanks: [":", "."], rule: "Açıklama yapılacak cümlenin sonuna iki nokta konur." },
+                { text: "Türkiye'nin bazı bölgeleri şunlardır___ Ege___ Marmara ve Akdeniz___", blanks: [":", ",", "."], rule: "Örnekler sıralanırken önce iki nokta, sonra aralara virgül konur." },
+                { text: "Sorunun cevabı çok açık___ Evet___", blanks: [":", "."], rule: "Açıklanacak bir cevabın öncesinde iki nokta kullanılır." },
+                { text: "Annem şöyle dedi___ Hemen buraya gel___", blanks: [":", "!"], rule: "Aktarma cümlelerinden önce iki nokta konur." },
+                { text: "Renkleri ikiye ayırırız___ sıcak ve soğuk renkler___", blanks: [":", "."], rule: "Açıklama yapılmadan önce iki nokta konur." },
+                { text: "Kışlıklarımı çıkardım___ kazaklar___ atkılar ve bereler___", blanks: [":", ",", "."], rule: "Açıklama ve örnekleme cümlelerinin kuralı gereği iki nokta kullanılır." }
+            ],
+            4: [
+                { text: "Kitaplığımda roman___ şiir___ masal___", blanks: [",", ",", "..."], rule: "Sıralanan örneklerin devam ettiğini göstermek için üç nokta kullanılır." },
+                { text: "Karşımızda uçsuz bucaksız bir deniz___", blanks: ["..."], rule: "Yüklemi olmayan, tamamlanmamış (eksiltili) cümlelerin sonuna üç nokta konur." },
+                { text: "Gök sarı___ toprak sarı___ çıplak ağaçlar sarı___", blanks: [",", ",", "..."], rule: "Örneklerin devam ettiğini belirtmek için cümlenin sonuna üç nokta konur." },
+                { text: "Ankara___ Türkiye'nin başkentidir___", blanks: [",", "."], rule: "Özneyi yüklemden ayırmak ve vurgulamak için virgül konur." },
+                { text: "Yoruldum___ Artık adım atacak halim kalmadı___", blanks: [".", "."], rule: "Anlamca tamamlanmış bağımsız cümlelerin sonuna nokta konur." },
+                { text: "Sınavı kazananlar şunlardır___ Ali___ Ayşe ve Zeynep___", blanks: [":", ",", "."], rule: "Açıklamadan önce iki nokta, örneklerin arasına virgül konur." },
+                { text: "Su___ oksijen ve hidrojenden oluşur___", blanks: [",", "."], rule: "Özneyi belirtmek için özneden sonra virgül kullanılır." },
+                { text: "Ne çabuk büyüdün___ seni görenler tanıyamıyor___", blanks: [",", "!"], rule: "Ünlem anlamı taşıyan cümlede küçük harfle devam edildiğinde ünlem işareti cümlenin sonuna konur." },
+                { text: "Tepelerin ardında yemyeşil bir ova___", blanks: ["..."], rule: "Yargısı tamamlanmamış (eksiltili) cümlenin sonuna üç nokta konur." },
+                { text: "Kırşehir___ Kaman___ Mucur___", blanks: [",", ",", "..."], rule: "Sıralanan eş görevli sözcükler bitmemişse sonuna üç nokta konur." },
+                { text: "O kadar güzel bir manzaraydı ki___", blanks: ["..."], rule: "Anlatımın okuyucunun hayal gücüne bırakıldığı tamamlanmamış cümlelerde üç nokta kullanılır." },
+                { text: "Bahçede çeşit çeşit çiçekler___ güller___ laleler___", blanks: [":", ",", "..."], rule: "Örnekler verilmeye başlandığında iki nokta, devamı var anlamında üç nokta konur." },
+                { text: "Karşımızda karlı dağlar___ yeşil ormanlar___", blanks: [",", "..."], rule: "Yüklemi olmayan eksiltili cümlelerin sonuna üç nokta konur." },
+                { text: "Kimse ne yapacağını bilmiyordu___", blanks: ["..."], rule: "Sözün kesildiği veya bitirilmediği yerlerde üç nokta kullanılır." },
+                { text: "Masada neler yoktu ki___ pastalar___ börekler___ tatlılar___", blanks: [":", ",", ",", "..."], rule: "Benzer örneklerin sürdürülebileceğini göstermek için üç nokta konur." },
+                { text: "Bir anda kapı açıldı ve___", blanks: ["..."], rule: "Heyecan veya merak uyandırmak için yarım bırakılan cümlenin sonuna üç nokta konur." },
+                { text: "Bu yörenin meşhur yemekleri___ mantı___ kebap___", blanks: [":", ",", "..."], rule: "Açıklama ve bitmemiş liste durumunda iki nokta ve üç nokta kullanılır." },
+                { text: "Rüzgar esiyor___ yapraklar uçuşuyor___", blanks: [",", "..."], rule: "Sıralı ve devamı olduğu hissettirilen eksiltili anlatımlarda üç nokta konur." },
+                { text: "Seni o kadar çok özledim ki___", blanks: ["..."], rule: "Duygunun yoğunluğunu belirtmek için yarım bırakılan cümlelerde üç nokta kullanılır." },
+                { text: "Pazardan kışlık sebzeler aldık___ pırasa___ ıspanak___", blanks: [":", ",", "..."], rule: "Örnekler bitmemişse sonuna üç nokta konur." },
+                { text: "Göz alabildiğine uzanan bir çöl___", blanks: ["..."], rule: "Eksiltili cümlelerin sonuna konur." },
+                { text: "Aniden durdu___ arkasına baktı ve___", blanks: [",", "..."], rule: "Sıralı hareketlerden sonra cümlenin sonu söylenmemişse üç nokta konur." },
+                { text: "Dolapta taze meyveler var___ elma___ armut___", blanks: [":", ",", "..."], rule: "Açıklama ve bitmeyen listeleme kuralıdır." },
+                { text: "Sonunda köye vardığımızda gördüğümüz manzara___", blanks: ["..."], rule: "Cümle yükleme bağlanmadığı için eksiltilidir, üç nokta kullanılır." },
+                { text: "Sessizlik___ sadece rüzgarın uğultusu___", blanks: [",", "..."], rule: "Yargı bildirmeyen söz öbeklerinin sonuna üç nokta konur." }
+            ],
+            5: [
+                { text: "At ölür___ meydan kalır___ yiğit ölür___ şan kalır___", blanks: [",", ";", ",", "."], rule: "Ögeleri arasında virgül bulunan sıralı cümleleri birbirinden ayırmak için noktalı virgül kullanılır." },
+                { text: "Kel ölür___ sırma saçlı olur___ kör ölür___ badem gözlü olur___", blanks: [",", ";", ",", "."], rule: "Virgülle ayrılmış grupları birleştiren sıralı cümleler arasına noktalı virgül konur." },
+                { text: "Sayısal derslerden Matematik___ Fizik___ sözel derslerden Türkçe___ Tarih çalışacağım___", blanks: [",", ";", ",", "."], rule: "Kendi içinde virgülle ayrılmış takımları (sayısal/sözel) ayırmak için araya noktalı virgül kullanılır." },
+                { text: "İngilizce___ Fransızca ve Almanca Batı dilleridir___ Arapça ve Farsça Doğu dilleridir___", blanks: [",", ";", "."], rule: "Tür ve takımları (Doğu/Batı dilleri) birbirinden ayırmak için araya noktalı virgül konur." },
+                { text: "Dünyanın en uzun nehirleri şunlardır___ Nil___ Amazon ve Yangtze___", blanks: [":", ",", "."], rule: "Açıklama veya listeleme öncesinde iki nokta kullanılır." },
+                { text: "İster inan___ ister inanma___ bu iş bitti___", blanks: [",", ",", "."], rule: "Tekrarlı bağlaçlardan sonra virgül konmaz ancak vurgu amaçlı sıralı söz öbekleri virgülle ayrılabilir." },
+                { text: "Kitap okumak ruhu besler___ spor yapmak bedeni güçlendirir___", blanks: [";", "."], rule: "Anlamca bağlı, içinde virgül barındırmayan sıralı cümleleri daha güçlü ayırmak için noktalı virgül (veya virgül) kullanılabilir." },
+                { text: "Mükemmel___ Bu çözümü hiç düşünmemiştim___", blanks: ["!", "."], rule: "Güçlü duygu bildiren sözcüklerden sonra büyük harfle başlanırsa ünlem işareti hemen konur." },
+                { text: "Belki haklıydın___ Ama artık çok geç___", blanks: ["...", "."], rule: "Tamamlanmayan veya derin anlam taşıyan duraklamalarda üç nokta kullanılabilir." },
+                { text: "Kısacası___ düzenli çalışmak başarıyı getirir___", blanks: [",", "."], rule: "Cümle başındaki özetleme veya geçiş ifadelerinden sonra virgül konur." },
+                { text: "Erkek çocuklara Ali___ Veli___ kız çocuklara Ayşe___ Fatma adı verilir___", blanks: [",", ";", ",", "."], rule: "Tür ve takımları ayırmak için gruplar arasına noktalı virgül konur." },
+                { text: "Pazardan elma___ armut___ manavdan ıspanak___ pırasa aldım___", blanks: [",", ";", ",", "."], rule: "Kendi içinde virgülle ayrılmış meyve ve sebze gruplarını ayırmak için noktalı virgül kullanılır." },
+                { text: "Gündüzleri tarlada___ bahçede çalışır___ geceleri kitap___ dergi okurdu___", blanks: [",", ";", ",", "."], rule: "İçinde virgül bulunan sıralı cümleleri birbirinden ayırmak için noktalı virgül konur." },
+                { text: "Matematik ve fen derslerini sabah___ Türkçe ve sosyal derslerini öğleden sonra çalışırım___", blanks: [";", "."], rule: "Grup oluşturan sıralı cümleler arasına noktalı virgül konur." },
+                { text: "Sonbahar ayları Eylül___ Ekim___ kış ayları Aralık___ Ocak'tır___", blanks: [",", ";", ",", "."], rule: "Kendi içinde virgülle ayrılmış grupları ayırmak için noktalı virgül kullanılır." },
+                { text: "Kalem___ silgi okul çantasına___ forma___ hırka spor çantasına kondu___", blanks: [",", ";", ",", "."], rule: "Takımları birbirinden ayırmak için noktalı virgül konur." },
+                { text: "İzmir___ Manisa Ege Bölgesi'nde___ Antalya___ Mersin Akdeniz Bölgesi'ndedir___", blanks: [",", ";", ",", "."], rule: "Ögeleri arasında virgül bulunan cümleleri bağlarken noktalı virgül kullanılır." },
+                { text: "Kırmızı___ sarı sıcak renkler___ mavi___ yeşil soğuk renklerdir___", blanks: [",", ";", ",", "."], rule: "Sıcak ve soğuk renk takımlarını ayırmak için noktalı virgül konur." },
+                { text: "Çay___ kahve içtik___ sohbet___ muhabbet ettik___", blanks: [",", ";", ",", "."], rule: "İçinde virgül olan sıralı cümleleri ayırma kuralıdır." },
+                { text: "Kardeşim oyuncaklarıyla___ bebekleriyle oynuyor___ ben ise ödevlerimi yapıyorum___", blanks: [",", ";", "."], rule: "Virgül içeren sıralı cümleyi diğerinden ayırmak için noktalı virgül konur." },
+                { text: "Roman___ hikaye okumayı severim___ şiir___ deneme bana göre değildir___", blanks: [",", ";", ",", "."], rule: "İki farklı yargıyı gruplandırırken araya noktalı virgül konur." },
+                { text: "Türkiye'nin başkenti Ankara___ Yunanistan'ın başkenti Atina'dır___", blanks: [";", "."], rule: "Anlamca bağlı sıralı cümleler arasına noktalı virgül konabilir." },
+                { text: "Sebzelerden fasulye___ kabak___ meyvelerden çilek___ kiraz aldık___", blanks: [",", ";", ",", "."], rule: "Sebze ve meyve takımlarını ayırmak için noktalı virgül kullanılır." },
+                { text: "Yeni kazağım mavi___ yeşil___ eski kazağım siyah___ beyaz renkteydi___", blanks: [",", ";", ",", "."], rule: "Ögeleri arasında virgül olan karşılaştırmalı cümleleri ayırır." },
+                { text: "Bahar geldi mi her yer canlanır___ çiçekler açar___ kuşlar öter___", blanks: [";", ",", "."], rule: "Bağımsız sıralı cümleleri kuvvetlice ayırmak için noktalı virgül kullanılır." }
+            ],
+            6: [
+                { text: "Öğretmenimiz___ 'Sınav haftaya yapılacak___' dedi___", blanks: [",", ".", "."], rule: "Alıntı cümlelerin sonuna uygun işaret konur ve alıntıdan sonra nokta ile devam edilir." },
+                { text: "Yeni nesil sizin eseriniz olacaktır___ diyerek öğretmenlere seslendi___", blanks: [",", "."], rule: "Tırnak içinde olmayan alıntı cümlelerden sonra virgül konur." },
+                { text: "İngiltere___ Fransa ve Almanya Avrupa'dadır___ Japonya ve Çin Asya'dadır___", blanks: [",", ";", "."], rule: "Kendi içinde virgülle ayrılmış grupları birbirinden ayırmak için noktalı virgül kullanılır." },
+                { text: "Edebiyatın işlevi şudur___ insanı insan yapan değerleri yaşatmak___", blanks: [":", "."], rule: "Açıklama yapılacak cümlenin sonuna iki nokta konur." },
+                { text: "Roman türünün üç temel unsuru vardır___ olay___ kişi ve mekân___", blanks: [":", ",", "."], rule: "Örnek veya liste verilecek cümlelerin sonunda iki nokta kullanılır." },
+                { text: "Bahar gelince dağlar___ taşlar___ ovalar yeşerir___", blanks: [",", ",", "."], rule: "Eş görevli kelimeleri ayırmak için virgül konur." },
+                { text: "Gerçekten inanıyor musun buna___", blanks: ["?"], rule: "Soru anlamı taşıyan cümlelerin sonuna soru işareti konur." },
+                { text: "Kim bilir___ belki bir gün yine karşılaşırız___", blanks: [",", "."], rule: "Duraksama veya ara verme yerlerinde virgül kullanılır." },
+                { text: "Bununla birlikte___ ekonomik koşullar da göz önünde bulundurulmalıdır___", blanks: [",", "."], rule: "Cümle başındaki bağlayıcı veya açıklayıcı öbeklerden sonra virgül konur." },
+                { text: "Sevinçten___ heyecandan içim içime sığmıyor___ bağırmak istiyorum___", blanks: [",", ";", "."], rule: "İçinde virgül bulunan sıralı cümleleri ayırmak için noktalı virgül kullanılır." },
+                { text: "Müdür Bey___ 'Herkes bahçede toplansın___' diye bağırdı___", blanks: [",", "!", "."], rule: "Tırnak içi cümlenin ünlemine dokunulmaz, cümlenin sonu nokta ile biter." },
+                { text: "Yazarlar şunlara dikkat etmeli___ dil bilgisi___ üslup ve kurgu___", blanks: [":", ",", "."], rule: "Açıklama öncesi iki nokta konur." },
+                { text: "Yarın hava yağmurlu olacak___ fırtına çıkacakmış___", blanks: [";", "."], rule: "Sıralı cümleler bağımsızsa ve birleşik anlam taşıyorsa noktalı virgül alabilir." },
+                { text: "Kitap okumak insana empati___ anlayış___ düşünme becerisi kazandırır___", blanks: [",", ",", "."], rule: "Eş görevli ögeleri ayırmak için virgül kullanılır." },
+                { text: "Hayat bir tiyatro sahnesidir___ derdi hep dedem___", blanks: [",", "."], rule: "Tırnak içine alınmamış aktarma cümlesinden sonra virgül konur." },
+                { text: "Sıcak yaz günlerinde deniz___ kum ve güneş vazgeçilmezdir___", blanks: [",", "."], rule: "Eş görevli kelimeler arasına virgül konur." },
+                { text: "Eyvah___ Yemek ocakta yandı___", blanks: ["!", "."], rule: "Ünlem kelimesinden sonra büyük harfle başlanıyorsa ünlem işareti konur." },
+                { text: "Gökyüzü bulutlu___ rüzgar sert esiyor___ yağmur ha yağdı ha yağacak___", blanks: [",", ";", "."], rule: "İçinde virgül bulunan sıralı cümleleri ayırmak için noktalı virgül konur." },
+                { text: "Dostluk___ en zor zamanlarda elinden tutandır___", blanks: [",", "."], rule: "Özneyi vurgulamak için virgül kullanılır." },
+                { text: "Nereye gittiğini___ ne zaman döneceğini kimseye söylemedi___", blanks: [",", "."], rule: "Eş görevli söz öbeklerini ayırır." },
+                { text: "Başarılı olmanın sırrı basittir___ çok çalışmak___", blanks: [":", "."], rule: "Açıklama gerektiren cümlelerde iki nokta kullanılır." },
+                { text: "Dağlar___ nehirler___ vadiler sanki bir tablo gibiydi___", blanks: [",", ",", "."], rule: "Sıralı özneler virgülle ayrılır." },
+                { text: "Sana söyleyecek tek bir sözüm var___ Git___", blanks: [":", "!"], rule: "Açıklama öncesi iki nokta, emir/duygu bildiren cümlenin sonuna ünlem." },
+                { text: "Çalışkan___ zeki bir öğrenciydi___ herkes onu severdi___", blanks: [",", ";", "."], rule: "İçinde virgül olan sıralı cümleleri ayırmak için noktalı virgül kullanılır." },
+                { text: "Şiir ruhun___ bilim aklın gıdasıdır___", blanks: [",", "."], rule: "Karşılaştırma ve eksiltili yüklem durumunda virgül konur." }
+            ],
+            7: [
+                { text: "Fuzuli şu beyitte aşkı anlatır___ 'Aşk imiş her ne var âlemde___'", blanks: [":", "."], rule: "Edebi metinlerdeki alıntılardan önce iki nokta konur." },
+                { text: "Tanzimat Dönemi şairleri___ Batı edebiyatından oldukça etkilenmiştir___", blanks: [",", "."], rule: "Uzun cümlelerde yüklemden uzak düşmüş olan özneyi belirtmek için virgül konur." },
+                { text: "Akşam kavun yedik___ sabahleyin incir___", blanks: [",", "."], rule: "Sıralı cümleleri birbirinden ayırmak için virgül kullanılır." },
+                { text: "Yazarın yeni kitabı___ 'Son Umut'___ raflardaki yerini aldı___", blanks: [",", ",", "."], rule: "Cümle içindeki ara sözleri veya ara cümleleri ayırmak için virgül kullanılır." },
+                { text: "Bazı bilim insanları erken kalkmayı tercih eder___ bazıları ise gece çalışmayı___", blanks: [",", "."], rule: "Sıralı cümleleri ayırmak için virgül konur." },
+                { text: "Ah___ o eski günler nerede___", blanks: [",", "?"], rule: "Ünlem kelimesinden sonra küçük harfle devam edildiği için virgül konur, cümlenin sonu soru olduğu için soru işareti konur." },
+                { text: "Bu şiirde biçim ve içerik uyumu sağlanmış mıdır___", blanks: ["?"], rule: "Soru ekiyle kurulan ve cevap bekleyen cümlelerin sonuna soru işareti konur." },
+                { text: "Söylemek istediklerimi dile getiremedim___ sadece sustum___", blanks: [",", "."], rule: "Bağımsız sıralı cümleler arasına virgül konur." },
+                { text: "Artık yeter___ Bu haksızlığa sessiz kalamam___", blanks: ["!", "."], rule: "Güçlü duygu bildiren ifadeden sonra ünlem konur." },
+                { text: "Ne büyük bir zafer___ Atalarımız bu toprakları öyle kazanmış___", blanks: ["!", "."], rule: "Coşku ve hayranlık bildiren cümlelerden sonra ünlem konur." },
+                { text: "Şiirde duygu___ romanda olay örgüsü___ tiyatroda ise diyalog ön plandadır___", blanks: [",", ";", "."], rule: "İçinde virgül bulunan sıralı cümleleri ayırmak için noktalı virgül kullanılır." },
+                { text: "Yahya Kemal___ 'Sessiz Gemi' adlı şiirinde ölümü anlatır___", blanks: [",", "."], rule: "Özneyi belirtmek için virgül konur." },
+                { text: "Genç yazar___ yıllar sonra doğduğu kasabaya___ memleketine dönmüştü___", blanks: [",", ",", "."], rule: "Ara sözleri (memleketine) belirtmek için başında ve sonunda virgül kullanılır." },
+                { text: "Düşünceleri özgür bırakan tek bir şey vardır___ edebiyat___", blanks: [":", "."], rule: "Açıklama yapılacak cümlenin sonuna iki nokta konur." },
+                { text: "Göz alabildiğine uzanan ovalar___ yemyeşil ormanlar___", blanks: [",", "..."], rule: "Bitmemiş eksiltili cümlelerin sonuna üç nokta konur." },
+                { text: "Neden bu kadar sessizsin___ bir derdin mi var___", blanks: [",", "?"], rule: "Sıralı soru cümlelerinde araya virgül, sona soru işareti konur." },
+                { text: "Tiyatro seyirciye ayna tutar___ sinema ise hayal kurdurur___", blanks: [";", "."], rule: "Anlamca bağlı sıralı cümleler noktalı virgülle ayrılabilir." },
+                { text: "Hey___ Beni duyuyor musunuz___", blanks: ["!", "?"], rule: "Ünlem bildiren seslenişten sonra ünlem, sorunun sonuna soru işareti konur." },
+                { text: "Klasik müzik dinlemek___ kitap okumak en sevdiğim aktivitelerdir___", blanks: [",", "."], rule: "Eş görevli fiilimsi gruplarını ayırmak için virgül konur." },
+                { text: "Sanatçı şöyle der___ Sanat içindir sanat___", blanks: [":", "."], rule: "Doğrudan aktarımlardan önce iki nokta kullanılır." },
+                { text: "Gözlerinde bir telaş___ bir korku___ bir endişe vardı___", blanks: [",", ",", "."], rule: "Eş görevli kelime gruplarını ayırır." },
+                { text: "Kitap eleştirmeni bu romanı çok beğendi___ yazarın üslubunu övdü___", blanks: [",", "."], rule: "Sıralı cümleleri birbirinden ayırmak için virgül kullanılır." },
+                { text: "Yorgundum___ uykusuzdum___ ama vazgeçmedim___", blanks: [",", ";", "."], rule: "Bağlaçtan önce anlamı güçlendirmek veya grupları ayırmak için noktalı virgül konabilir." },
+                { text: "Bir yanda sonsuz mavilik___ diğer yanda uçurum___", blanks: [",", "..."], rule: "Eksiltili cümle yapısıdır." },
+                { text: "Öyle mi___ demek sen de bizimle geliyorsun___", blanks: [",", "?"], rule: "Onay veya soru bildiren giriş sözcüklerinden sonra virgül konur." }
+            ],
+            8: [
+                { text: "Cumhuriyet___ bağımsızlık savaşının ardından kurulan devlet düzenidir___", blanks: [",", "."], rule: "Özneyi vurgulamak ve yüklemden ayırmak için virgül kullanılır." },
+                { text: "YKS hazırlığında düzenli çalışmak___ hedef odaklı olmak çok önemlidir___", blanks: [",", "."], rule: "Eş görevli fiilimsi gruplarını ayırmak için virgül konur." },
+                { text: "Doğu kültürü içe dönük bir yapıyı yansıtır___ Batı kültürü ise dışa dönüktür___", blanks: [",", "."], rule: "Karşılaştırma içeren sıralı cümleleri ayırmak için virgül konur." },
+                { text: "Yıllar sonra döndüğümde her şey değişmişti___ tanıdık hiçbir yüz yoktu___", blanks: [",", "."], rule: "Bağımsız sıralı cümleleri ayırmak için virgül kullanılır." },
+                { text: "Belki de bu sınavın tek anlamı şuydu___ kendini tanımak___", blanks: [":", "."], rule: "Açıklama yapılacak yargıdan önce iki nokta konur." },
+                { text: "Bu romanda ölüm teması hangi imgelerle işlenmiştir___", blanks: ["?"], rule: "Soru bildiren cümlelerin sonuna soru işareti konur." },
+                { text: "Artık bu toprakların sahibi yalnızca biz değiliz___ geleceğe karşı sorumluluğumuz var___", blanks: [",", "."], rule: "Sıralı cümleleri ayırmak için virgül konur." },
+                { text: "Ankara'ya___ doğduğum şehre___ yıllar sonra geri döndüm___", blanks: [",", ",", "."], rule: "Ara sözleri belirtmek için ara sözün başında ve sonunda virgül kullanılır." },
+                { text: "İnsan___ hayallerinin büyüklüğü kadar özgürdür___", blanks: [",", "."], rule: "Uzun cümlelerde özneyi vurgulamak için virgül konur." },
+                { text: "Gidiyorum___ gurbeti gönlümde duya duya___", blanks: [",", "."], rule: "Devrik cümlelerde yargı bitmemiş ve zarf öbeği ayrılmak isteniyorsa virgül konur." },
+                { text: "Makale___ bilgi vermek amacıyla yazılır___ deneme ise kişisel düşünceleri içerir___", blanks: [",", ";", "."], rule: "İçinde virgül olan sıralı cümleleri ayırmak için noktalı virgül kullanılır." },
+                { text: "Atatürk'ün şu sözü çok kıymetlidir___ 'Yurtta sulh___ cihanda sulh___'", blanks: [":", ",", "."], rule: "Alıntı öncesi iki nokta, sıralı ögeler arasına virgül konur." },
+                { text: "Kurtuluş Savaşı___ milletin azim ve kararlılığıyla kazanılmıştır___", blanks: [",", "."], rule: "Özneyi vurgulamak için virgül konur." },
+                { text: "Bir milletin bağımsızlığı iki şeye bağlıdır___ eğitim ve ekonomi___", blanks: [":", "."], rule: "Açıklama cümlelerinden önce iki nokta konur." },
+                { text: "Tarih okuyanlar bilir___ geçmişini bilmeyen geleceğini kuramaz___", blanks: [":", "."], rule: "Açıklayıcı veya öğüt veren yargılardan önce iki nokta kullanılır." },
+                { text: "Sanatın her dalını severim___ müzik___ resim___ heykel___", blanks: [":", ",", ",", "..."], rule: "Örnekleme devam ediyorsa üç nokta konur." },
+                { text: "Bu topraklarda kimler yaşamadı ki___ Hititler___ Frigler___ Lidyalılar___", blanks: [":", ",", ",", "..."], rule: "Benzer örneklerin sürüp gittiğini belirtir." },
+                { text: "Akşamüstü güneş batarken deniz kızıl___ gökyüzü mor bir renge bürünürdü___", blanks: [",", "."], rule: "Sıralı ifadeleri ayırmak için virgül konur." },
+                { text: "Söylemlerin ve eylemlerin uyuşmuyor___ bu durum güven sarsıyor___", blanks: [";", "."], rule: "Anlamca bağlı, neden-sonuç içeren sıralı cümleleri ayırır." },
+                { text: "Şiir okumak ruhu inceltir___ felsefe yapmak düşünceyi derinleştirir___", blanks: [";", "."], rule: "İki farklı bağımsız yargıyı güçlü bir şekilde bağlamak için noktalı virgül kullanılır." },
+                { text: "Gerçek özgürlük nedir___ kuralsız yaşamak mı___", blanks: ["?", "?"], rule: "Sıralı soru cümlelerinde her yargı büyük harfle başlıyorsa ayrı ayrı soru işareti konur." },
+                { text: "Yorgun adımlarla eve doğru yürüdü___ zihni bambaşka yerlerdeydi___", blanks: [",", "."], rule: "Sıralı cümleleri birbirinden ayırmak için virgül kullanılır." },
+                { text: "Heyecanlı___ telaşlı bir sesle kapıyı çaldı___", blanks: [",", "."], rule: "Eş görevli sıfatları ayırmak için virgül kullanılır." },
+                { text: "Vatan___ uğrunda can verilecek en kutsal değerdir___", blanks: [",", "."], rule: "Özneyi yüklemden uzaklaştığında vurgulamak için virgül kullanılır." },
+                { text: "Kimi yazar hayalleri___ kimi yazar gerçekleri kaleme alır___", blanks: [",", "."], rule: "Karşılaştırmalı sıralı cümleleri birbirinden ayırmak için virgül konur." }
+            ]
+        };
+
+        const GRADES = [
+            { id: 1, label: "1. Sınıf", color: "#FF6B6B", icon: "🌱" },
+            { id: 2, label: "2. Sınıf", color: "#FF9F43", icon: "🌿" },
+            { id: 3, label: "3. Sınıf", color: "#FECA57", icon: "🌸" },
+            { id: 4, label: "4. Sınıf", color: "#48DBFB", icon: "🌺" },
+            { id: 5, label: "5. Sınıf", color: "#FF9FF3", icon: "⭐" },
+            { id: 6, label: "6. Sınıf", color: "#54A0FF", icon: "🚀" },
+            { id: 7, label: "7. Sınıf", color: "#5F27CD", icon: "💡" },
+            { id: 8, label: "8. Sınıf", color: "#00D2D3", icon: "🎯" }
+        ];
+
+        const PUNCT_META = [
+            { mark: ".", name: "Nokta" },
+            { mark: ",", name: "Virgül" },
+            { mark: "!", name: "Ünlem" },
+            { mark: "?", name: "Soru işareti" },
+            { mark: ":", name: "İki nokta" },
+            { mark: ";", name: "Noktalı virgül" },
+            { mark: "...", name: "Üç nokta" }
+        ];
+
+        const GRADE_OPTS = {
+            1: [".", "!", "?"],
+            2: [".", "!", "?", ","],
+            3: [".", "!", "?", ",", ":"],
+            4: [".", "!", "?", ",", ":", "..."],
+            5: [".", "!", "?", ",", ":", "...", ";"],
+            6: [".", "!", "?", ",", ":", "...", ";"],
+            7: [".", "!", "?", ",", ":", "...", ";"],
+            8: [".", "!", "?", ",", ":", "...", ";"]
+        };
+
+        const QUESTIONS_PER_ROUND = 5;
+        const MAX_LIVES = 3;
+        const TOTAL_ROUNDS = 5;
+        const ANALYSIS_MIN_READ_MS = 6000;
+
+        // --- STREAMING_CHUNK:Oyun Mekaniği ve State Yönetimi Başlatılıyor... ---
+        // --- DEVLET YÖNETİMİ ---
+        let currentScreen = 'home';
+        let gradeId = null;
+        let gradeInfo = null;
+        let currentRound = 1;
+        let lives = MAX_LIVES;
+        let usedTexts = [];
+        let questions = [];
+        let qIdx = 0;
+        
+        let filledAnswers = {}; 
+        let feedbackMap = {}; 
+        let activeBlankIdx = 0;
+        let isProcessing = false;
+
+        let roundResults = [];
+        let allResults = [];
+        let analysisReady = false;
+        let timerInterval = null;
+
+        // --- YARDIMCI FONKSİYONLAR ---
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function pickQuestions(gId, used) {
+            const pool = QUESTION_BANK[gId] || [];
+            const available = pool.filter(q => !used.includes(q.text));
+            const qsToUse = available.length >= QUESTIONS_PER_ROUND ? available : pool;
+            return shuffle(qsToUse).slice(0, QUESTIONS_PER_ROUND);
+        }
+
+        function setScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            currentScreen = screenId;
+            window.scrollTo(0,0); // Mobilde ekran değişiminde yukarı kaydır
+        }
+
+        // --- ANA MENÜ ---
+        function renderHome() {
+            const container = document.getElementById('grades-container');
+            container.innerHTML = '';
+            GRADES.forEach(g => {
+                const btn = document.createElement('button');
+                btn.className = 'grade-btn';
+                btn.style.borderColor = `${g.color}33`;
+                btn.innerHTML = `
+                    <span style="font-size: 28px">${g.icon}</span>
+                    <span style="font-size: 13px; font-weight: 700; color: ${g.color}; line-height: 1.2; text-align: center;">${g.label}</span>
+                `;
+                // Mobilde dokunma hassasiyeti ve hover çakışmasını engellemek için
+                btn.onmouseenter = () => {
+                    if (window.matchMedia("(hover: hover)").matches) {
+                        btn.style.background = `${g.color}18`;
+                        btn.style.borderColor = g.color;
+                        btn.style.boxShadow = `0 10px 26px ${g.color}28`;
+                    }
+                };
+                btn.onmouseleave = () => {
+                    if (window.matchMedia("(hover: hover)").matches) {
+                        btn.style.background = 'rgba(255,255,255,0.04)';
+                        btn.style.borderColor = `${g.color}33`;
+                        btn.style.boxShadow = 'none';
+                    }
+                };
+                // Mobil tıklama/dokunma anı stili
+                btn.ontouchstart = () => {
+                    btn.style.background = `${g.color}18`;
+                    btn.style.borderColor = g.color;
+                    btn.style.transform = "scale(0.96)";
+                }
+                btn.ontouchend = () => {
+                    btn.style.background = 'rgba(255,255,255,0.04)';
+                    btn.style.borderColor = `${g.color}33`;
+                    btn.style.transform = "scale(1)";
+                }
+
+                btn.onclick = () => startGame(g.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function goToHome() {
+            setScreen('home-screen');
+        }
+
+        // --- OYUN MANTIĞI ---
+        function startGame(g) {
+            sound.init(); // Mobil/Tablet audio başlatma onayı
+            gradeId = g;
+            gradeInfo = GRADES.find(x => x.id === g);
+            currentRound = 1;
+            allResults = [];
+            const qs = pickQuestions(g, []);
+            usedTexts = qs.map(q => q.text);
+            initRound(qs);
+        }
+
+        function initRound(qs) {
+            questions = qs;
+            qIdx = 0;
+            roundResults = [];
+            lives = MAX_LIVES;
+            resetBlankState();
+            setScreen('game-screen');
+            updateGameUI();
+        }
+
+        function retryRound() {
+            const qs = pickQuestions(gradeId, usedTexts);
+            usedTexts.push(...qs.map(q => q.text));
+            initRound(qs);
+        }
+
+        function resetBlankState() {
+            filledAnswers = {};
+            feedbackMap = {};
+            activeBlankIdx = 0;
+            isProcessing = false;
+        }
+
+        // --- STREAMING_CHUNK:Arayüz (UI) Güncellemeleri Sağlanıyor... ---
+        function updateGameUI() {
+            const q = questions[qIdx];
+            if (!q) return;
+
+            // Üst Bar
+            document.getElementById('game-grade-title').innerHTML = `${gradeInfo.icon} ${gradeInfo.label}`;
+            document.getElementById('game-grade-title').style.color = gradeInfo.color;
+            document.getElementById('game-round-text').innerText = `${currentRound}. TUR / ${TOTAL_ROUNDS}`;
+            
+            // Round Bar
+            const rBar = document.getElementById('round-bar');
+            rBar.innerHTML = '';
+            for(let i=0; i<TOTAL_ROUNDS; i++) {
+                const d = document.createElement('div');
+                d.style.height = '5px';
+                d.style.borderRadius = '3px';
+                d.style.transition = 'all 0.4s';
+                if(i < currentRound - 1) {
+                    d.style.width = '28px'; d.style.background = '#4CAF50';
+                } else if(i === currentRound - 1) {
+                    d.style.width = '28px'; d.style.background = '#FFD700'; d.style.boxShadow = '0 0 8px #FFD70055';
+                } else {
+                    d.style.width = '10px'; d.style.background = 'rgba(255,255,255,0.15)';
+                }
+                rBar.appendChild(d);
+            }
+
+            // Canlar
+            const hearts = document.getElementById('hearts-container');
+            hearts.innerHTML = '';
+            for(let i=0; i<MAX_LIVES; i++) {
+                const s = document.createElement('span');
+                s.innerText = '❤️';
+                s.style.fontSize = '20px';
+                s.style.transition = 'all 0.3s';
+                if(i >= lives) {
+                    s.style.filter = 'grayscale(1) opacity(0.22)';
+                    s.style.transform = 'scale(0.78)';
+                }
+                hearts.appendChild(s);
+            }
+
+            // İlerleme Çubuğu
+            document.getElementById('progress-text-1').innerText = `SORU ${qIdx + 1} / ${questions.length}`;
+            document.getElementById('progress-text-2').innerText = `%${Math.round((qIdx / questions.length) * 100)}`;
+            document.getElementById('progress-bar-fill').style.width = `${(qIdx / questions.length) * 100}%`;
+
+            // Çoklu Boşluk Göstergesi
+            const totalBlanks = q.blanks.length;
+            const multiInd = document.getElementById('multi-blank-indicator');
+            if (totalBlanks > 1) {
+                multiInd.style.display = 'flex';
+                const dots = document.getElementById('multi-blank-dots');
+                dots.innerHTML = '';
+                for(let i=0; i<totalBlanks; i++) {
+                    const fb = feedbackMap[i];
+                    const isDone = fb === 'correct' || fb === 'wrong' || fb === 'wrong_done';
+                    const isAct = i === activeBlankIdx;
+                    const d = document.createElement('div');
+                    d.style.height = '6px'; d.style.borderRadius = '3px'; d.style.transition = 'all 0.3s';
+                    d.style.width = isAct ? '24px' : '8px';
+                    d.style.background = isDone ? (fb === 'correct' ? '#4CAF50' : '#F44336') : isAct ? '#FFD700' : 'rgba(255,255,255,0.15)';
+                    d.style.boxShadow = isAct ? '0 0 8px #FFD70055' : 'none';
+                    dots.appendChild(d);
+                }
+            } else {
+                multiInd.style.display = 'none';
+            }
+
+            // Cümle Render
+            const sentCont = document.getElementById('sentence-container');
+            sentCont.innerHTML = '';
+            const parts = q.text.split("___");
+            
+            parts.forEach((part, idx) => {
+                const isLast = idx === parts.length - 1;
+                const isActive = idx === activeBlankIdx;
+                const filled = filledAnswers[idx];
+                const fb = feedbackMap[idx];
+
+                const spanText = document.createElement('span');
+                spanText.innerText = part;
+                sentCont.appendChild(spanText);
+
+                if (!isLast) {
+                    let bg = "rgba(255,255,255,0.05)";
+                    let border = "2px dashed rgba(255,255,255,0.2)";
+                    let color = "rgba(255,255,255,0.2)";
+                    let shadow = "none";
+
+                    if (isActive && !filled) {
+                        bg = "rgba(255,215,0,0.1)"; border = "2px solid rgba(255,215,0,0.6)"; color = "#FFD700"; shadow = "0 0 12px rgba(255,215,0,0.25)";
+                    } else if (filled && fb === "correct") {
+                        bg = "rgba(76,175,80,0.18)"; border = "2px solid #4CAF50"; color = "#4CAF50"; shadow = "0 0 10px rgba(76,175,80,0.3)";
+                    } else if (filled && fb === "wrong") {
+                        bg = "rgba(244,67,54,0.15)"; border = "2px solid #F44336"; color = "#F44336"; shadow = "0 0 10px rgba(244,67,54,0.25)";
+                    } else if (filled && fb === "wrong_done") {
+                        bg = "rgba(244,67,54,0.08)"; border = "2px solid rgba(244,67,54,0.4)"; color = "#F44336"; shadow = "none";
+                    }
+
+                    const spanBlank = document.createElement('span');
+                    spanBlank.className = 'blank-span';
+                    spanBlank.style.display = "inline-flex";
+                    spanBlank.style.alignItems = "center";
+                    spanBlank.style.justifyContent = "center";
+                    spanBlank.style.minWidth = filled ? "auto" : "36px";
+                    spanBlank.style.paddingInline = filled ? "12px" : "0";
+                    spanBlank.style.height = "32px";
+                    spanBlank.style.borderRadius = "8px";
+                    spanBlank.style.margin = "0 4px";
+                    spanBlank.style.fontWeight = "900";
+                    spanBlank.style.fontSize = "18px";
+                    spanBlank.style.verticalAlign = "middle";
+                    
+                    spanBlank.style.background = bg;
+                    spanBlank.style.border = border;
+                    spanBlank.style.color = color;
+                    spanBlank.style.boxShadow = shadow;
+
+                    spanBlank.innerText = filled || (isActive ? "?" : "·");
+
+                    if (isActive && !filled && totalBlanks > 1) {
+                        const lbl = document.createElement('span');
+                        lbl.innerText = `${idx + 1}. Boşluk`;
+                        lbl.style.position = "absolute"; lbl.style.bottom = "-20px"; lbl.style.left = "50%";
+                        lbl.style.transform = "translateX(-50%)"; lbl.style.fontSize = "10px";
+                        lbl.style.color = "#FFD700"; lbl.style.whiteSpace = "nowrap"; lbl.style.opacity = "0.8";
+                        spanBlank.appendChild(lbl);
+                    }
+                    sentCont.appendChild(spanBlank);
+                }
+            });
+
+            // Banner
+            const activeFb = feedbackMap[activeBlankIdx] ?? null;
+            const showFeedback = activeFb === "correct" || activeFb === "wrong";
+            const banner = document.getElementById('feedback-banner');
+            if (showFeedback) {
+                banner.style.display = 'block';
+                banner.style.background = activeFb === "correct" ? "rgba(76,175,80,0.12)" : "rgba(244,67,54,0.12)";
+                banner.style.border = `1px solid ${activeFb === "correct" ? "rgba(76,175,80,0.3)" : "rgba(244,67,54,0.3)"}`;
+                banner.style.color = activeFb === "correct" ? "#4CAF50" : "#F44336";
+                
+                let titleText = "";
+                if (activeFb === "correct") {
+                    titleText = (totalBlanks > 1 && activeBlankIdx < totalBlanks - 1) ? `✓ Doğru! Sıradaki boşluğa geçiliyor...` : "✓ Harika, Doğru!";
+                } else {
+                    titleText = `✗ Yanlış. Buraya "${q.blanks[activeBlankIdx]}" gelmeliydi.`;
+                }
+                document.getElementById('feedback-title').innerText = titleText;
+                document.getElementById('feedback-rule').innerText = q.rule;
+            } else {
+                banner.style.display = 'none';
+            }
+
+            // Butonlar
+            document.getElementById('buttons-title').innerText = totalBlanks > 1 ? `${activeBlankIdx + 1}. Boşluk İçin Seçim Yap` : "Uygun İşareti Seç";
+            const btnCont = document.getElementById('punct-buttons-container');
+            btnCont.innerHTML = '';
+            
+            const opts = PUNCT_META.filter(p => GRADE_OPTS[gradeId]?.includes(p.mark));
+            const answered = showFeedback;
+
+            opts.forEach(opt => {
+                let s = { bg: "rgba(255,255,255,0.07)", border: "1.5px solid rgba(255,255,255,0.12)", color: "#CCC", shadow: "none" };
+                let disabled = false;
+
+                if (answered) {
+                    const chosen = filledAnswers[activeBlankIdx];
+                    disabled = true;
+                    if (chosen === opt.mark) {
+                        if (activeFb === "correct") {
+                            s = { bg: "rgba(76,175,80,0.22)", border: "1.5px solid #4CAF50", color: "#4CAF50", shadow: "0 0 14px rgba(76,175,80,0.35)" };
+                        } else {
+                            s = { bg: "rgba(244,67,54,0.18)", border: "1.5px solid #F44336", color: "#F44336", shadow: "0 0 14px rgba(244,67,54,0.3)" };
+                        }
+                    } else if (opt.mark === q.blanks[activeBlankIdx] && activeFb === "wrong") {
+                        s = { bg: "rgba(76,175,80,0.1)", border: "1.5px dashed #4CAF50", color: "#4CAF50", shadow: "none" };
+                    }
+                }
+
+                const b = document.createElement('button');
+                b.className = 'punct-btn';
+                b.style.background = s.bg;
+                b.style.border = s.border;
+                b.style.color = s.color;
+                b.style.boxShadow = s.shadow;
+                b.style.cursor = disabled ? "default" : "pointer";
+                b.disabled = disabled;
+                
+                b.innerHTML = `
+                    <span style="font-size: 20px; font-weight: 800; line-height: 1">${opt.mark}</span>
+                    <span style="font-size: 9px; opacity: 0.7; letter-spacing: 0.3px; text-align: center; line-height: 1.2">${opt.name}</span>
+                `;
+
+                if(!disabled) {
+                    b.onmouseenter = () => { if (window.matchMedia("(hover: hover)").matches) b.style.background = "rgba(255,255,255,0.13)"; }
+                    b.onmouseleave = () => { if (window.matchMedia("(hover: hover)").matches) b.style.background = s.bg; }
+                    
+                    b.ontouchstart = () => { b.style.background = "rgba(255,255,255,0.18)"; b.style.transform = "scale(0.92)"; }
+                    b.ontouchend = () => { b.style.background = s.bg; b.style.transform = "scale(1)"; }
+                    
+                    b.onclick = () => handleAnswer(opt.mark);
+                }
+                btnCont.appendChild(b);
+            });
+        }
+
+        // --- STREAMING_CHUNK:Cevap Doğrulama ve Analiz Algoritmaları... ---
+        function handleAnswer(mark) {
+            if(isProcessing) return;
+            isProcessing = true;
+
+            const q = questions[qIdx];
+            const totalBlanks = q.blanks.length;
+            const expected = q.blanks[activeBlankIdx];
+            const isCorrect = mark === expected;
+
+            feedbackMap[activeBlankIdx] = isCorrect ? "correct" : "wrong";
+            filledAnswers[activeBlankIdx] = mark;
+
+            if (isCorrect) sound.correct();
+            else {
+                sound.wrong();
+                lives--;
+            }
+
+            updateGameUI();
+
+            if (!isCorrect && lives <= 0) {
+                setTimeout(() => {
+                    document.getElementById('retry-desc').innerText = `Üzülme, ${currentRound}. tur yeni sorularla tekrar başlıyor. Pratik yaptıkça daha iyi olacaksın.`;
+                    document.getElementById('btn-retry').style.background = gradeInfo.color;
+                    document.getElementById('btn-retry').style.boxShadow = `0 8px 22px ${gradeInfo.color}44`;
+                    document.getElementById('btn-retry').onclick = retryRound;
+                    setScreen('retry-screen');
+                }, 1400);
+                return;
+            }
+
+            const isLastBlank = activeBlankIdx === totalBlanks - 1;
+
+            setTimeout(() => {
+                if (isLastBlank) {
+                    let anyWrong = false;
+                    for(let i=0; i<totalBlanks; i++) { if(feedbackMap[i] === 'wrong' || feedbackMap[i] === 'wrong_done') anyWrong = true; }
+                    
+                    const result = { text: q.text, expectedAll: q.blanks, isCorrect: !anyWrong, rule: q.rule };
+                    roundResults.push(result);
+                    advanceQuestion();
+                } else {
+                    activeBlankIdx++;
+                    if (!isCorrect) {
+                        setTimeout(() => {
+                            feedbackMap[activeBlankIdx-1] = "wrong_done";
+                            isProcessing = false;
+                            updateGameUI();
+                        }, 600);
+                    } else {
+                        isProcessing = false;
+                        updateGameUI();
+                    }
+                }
+            }, isCorrect ? 800 : 1300);
+        }
+
+        function advanceQuestion() {
+            resetBlankState();
+            qIdx++;
+            if (qIdx >= questions.length) {
+                sound.complete();
+                allResults.push(...roundResults);
+                generateAnalysis();
+            } else {
+                updateGameUI();
+            }
+        }
+
+        // --- ANALİZ ---
+        function generateAnalysis() {
+            setScreen('analysis-screen');
+            document.getElementById('analysis-title').innerHTML = `${gradeInfo.icon} ${gradeInfo.label} · ${currentRound}. Tur Raporu`;
+            document.getElementById('analysis-title').style.color = gradeInfo.color;
+            
+            document.getElementById('analysis-loading').style.display = 'block';
+            document.getElementById('analysis-content').style.display = 'none';
+            document.getElementById('analysis-spinner').style.borderTopColor = gradeInfo.color;
+            analysisReady = false;
+
+            const nBtn = document.getElementById('next-round-btn');
+            nBtn.disabled = true;
+            nBtn.innerText = "⏳ Tavsiyeleri Okuyun...";
+            nBtn.style.background = "rgba(255,255,255,0.08)";
+            nBtn.style.border = "1px solid rgba(255,255,255,0.1)";
+            nBtn.style.color = "rgba(255,255,255,0.3)";
+            nBtn.style.boxShadow = "none";
+            nBtn.style.cursor = "not-allowed";
+
+            setTimeout(() => {
+                const correctCnt = roundResults.filter(x => x.isCorrect).length;
+                const pct = Math.round((correctCnt / roundResults.length) * 100);
+                const errors = roundResults.filter(x => !x.isCorrect);
+                
+                let tdk_rule = "Bildirme cümlelerinin sonuna nokta (.) konur.";
+                let gaps = [];
+                let strengths = ["Noktalama işaretlerinin temel kurallarına uyuyorsun."];
+                
+                if (errors.length > 0) {
+                    tdk_rule = errors[0].rule;
+                    gaps.push("Bazı özel TDK kurallarını tekrar etmen gerek.");
+                    strengths = ["Hatalarını görüp öğrenme potansiyelin çok yüksek."];
+                } else {
+                    tdk_rule = roundResults[0]?.rule || "Kuralları mükemmel uyguluyorsun.";
+                    strengths.push("Tüm boşlukları hatasız şekilde doldurdun.");
+                }
+
+                const scColor = pct >= 80 ? "#4CAF50" : pct >= 60 ? "#FFD700" : "#F44336";
+
+                document.getElementById('analysis-score').innerText = `%${pct}`;
+                document.getElementById('analysis-score').style.color = scColor;
+                document.getElementById('analysis-score').style.textShadow = `0 0 40px ${scColor}44`;
+                
+                const mastery = document.getElementById('analysis-mastery');
+                mastery.innerText = pct >= 80 ? "Harika!" : pct >= 50 ? "Gelişiyor" : "Tekrar Etmeli";
+                mastery.style.background = `${scColor}15`; mastery.style.border = `1px solid ${scColor}30`; mastery.style.color = scColor;
+
+                document.getElementById('analysis-headline').innerText = pct >= 80 ? "Dil Bilgini Konuşturdun!" : "Biraz Daha Pratikle Mükemmel Olacak!";
+                document.getElementById('analysis-score-card').style.borderColor = `${scColor}33`;
+
+                document.getElementById('analysis-coach-note').innerText = pct >= 80 
+                    ? "Edebiyat öğretmenin seninle gurur duyardı. TDK kurallarına harfiyen uyuyorsun." 
+                    : "Türkçe çok zengin ve kurallı bir dildir. Hatalarından öğrenerek bir sonraki turda daha iyisini yapacaksın.";
+
+                const strEl = document.getElementById('analysis-strengths'); strEl.innerHTML = '';
+                strengths.forEach(s => { strEl.innerHTML += `<div style="font-size:13px;color:rgba(255,255,255,0.75);margin-bottom:8px;line-height:1.5">• ${s}</div>`; });
+
+                const gapsEl = document.getElementById('analysis-gaps'); gapsEl.innerHTML = '';
+                if(gaps.length > 0) {
+                    gaps.forEach(s => { gapsEl.innerHTML += `<div style="font-size:13px;color:rgba(255,255,255,0.75);margin-bottom:8px;line-height:1.5">• ${s}</div>`; });
+                } else {
+                    gapsEl.innerHTML = `<div style="font-size: 13px; color: rgba(76,175,80,0.9); font-weight: 600;">Harika! Eksik bulunamadı. 🎉</div>`;
+                }
+
+                document.getElementById('analysis-tdk-rule').innerText = tdk_rule;
+                document.getElementById('analysis-tip').innerText = `💡 Cümleyi içinden sesli olarak oku, vurgu ve duraklamalar sana hangi işareti koyacağını fısıldayacaktır.`;
+                document.getElementById('analysis-motivation').innerText = `⭐ "Noktalama işaretleri cümlenin trafik levhalarıdır, sen bu yolda usta bir şoförsün!"`;
+
+                document.getElementById('analysis-loading').style.display = 'none';
+                document.getElementById('analysis-content').style.display = 'flex';
+
+                // Timer başlat
+                let elapsed = 0;
+                const fill = document.getElementById('read-timer-fill');
+                fill.style.width = '0%';
+                fill.style.background = `linear-gradient(90deg, ${gradeInfo.color}, #5F27CD)`;
+                
+                if(timerInterval) clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    elapsed += 200;
+                    fill.style.width = `${Math.min((elapsed/ANALYSIS_MIN_READ_MS)*100, 100)}%`;
+                    if(elapsed >= ANALYSIS_MIN_READ_MS) {
+                        clearInterval(timerInterval);
+                        analysisReady = true;
+                        nBtn.disabled = false;
+                        nBtn.innerText = currentRound < TOTAL_ROUNDS ? `${currentRound + 1}. Tura Geç →` : "🏆 Sonuçları Gör";
+                        nBtn.style.background = gradeInfo.color;
+                        nBtn.style.border = "none";
+                        nBtn.style.color = "#fff";
+                        nBtn.style.boxShadow = `0 10px 30px ${gradeInfo.color}55`;
+                        nBtn.style.cursor = "pointer";
+                        nBtn.onclick = goNextRound;
+                        nBtn.onmouseenter = () => { nBtn.style.filter = "brightness(1.15)"; nBtn.style.transform = "translateY(-3px)"; };
+                        nBtn.onmouseleave = () => { nBtn.style.filter = "brightness(1)"; nBtn.style.transform = "translateY(0)"; };
+                    }
+                }, 200);
+
+            }, 1200);
+        }
+
+        function goNextRound() {
+            if (currentRound >= TOTAL_ROUNDS) {
+                sound.win();
+                showComplete();
+                return;
+            }
+            currentRound++;
+            const qs = pickQuestions(gradeId, usedTexts);
+            usedTexts.push(...qs.map(q => q.text));
+            initRound(qs);
+        }
+
+        function showComplete() {
+            setScreen('complete-screen');
+            const totalCorrect = allResults.filter(r => r.isCorrect).length;
+            const total = allResults.length;
+            const pct = total > 0 ? Math.round((totalCorrect / total) * 100) : 0;
+            const medal = pct >= 90 ? "🥇" : pct >= 75 ? "🥈" : pct >= 60 ? "🥉" : "📚";
+            const scColor = pct >= 80 ? "#4CAF50" : pct >= 60 ? "#FFD700" : "#F44336";
+
+            document.getElementById('complete-medal').innerText = medal;
+            document.getElementById('complete-medal').style.filter = `drop-shadow(0 0 30px ${scColor}66)`;
+            document.getElementById('complete-desc').innerHTML = `${gradeInfo.icon} ${gradeInfo.label} · Tüm ${TOTAL_ROUNDS} Tur Tamamlandı`;
+            
+            document.getElementById('complete-card').style.borderColor = `${scColor}33`;
+            document.getElementById('complete-score').innerText = `%${pct}`;
+            document.getElementById('complete-score').style.color = scColor;
+            document.getElementById('complete-score').style.textShadow = `0 0 40px ${scColor}44`;
+            
+            document.getElementById('complete-stats').innerText = `${total} Soruda ${totalCorrect} Doğru`;
+
+            const btnPlay = document.getElementById('btn-play-again');
+            btnPlay.style.background = gradeInfo.color;
+            btnPlay.style.boxShadow = `0 8px 24px ${gradeInfo.color}44`;
+            btnPlay.onclick = () => startGame(gradeId);
+        }
+
+        // --- BAŞLATMA ---
+        renderHome();
+
+    </script>
+</body>
+</html>
