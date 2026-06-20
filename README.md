@@ -5,7 +5,7 @@
     <title>Benim HTML Oyunlarım</title>
 </head>
 <body>
-    <h1>Oyun Portfolyoma Hoş Geldiniz!</h1>
+    <h1>Oyun Portfoyuma Hoş Geldiniz!</h1>
     <p>Oynamak istediğiniz oyuna tıklayın:</p>
     <ul>
 </body>
